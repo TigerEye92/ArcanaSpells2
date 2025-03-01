@@ -79,8 +79,18 @@ public class ContainerSpellBook extends Container {
             return null; // Возвращаем null, если ItemStack отсутствует и режим не "стандартный"
         }
 
-        // Вызываем оригинальный метод slotClick, если все проверки пройдены
-        return super.slotClick(slotId, clickedButton, mode, player);
+        // Добавьте дополнительные проверки или логику здесь, если необходимо
+
+        // Обратите внимание, что мы не вызываем super.slotClick() напрямую, чтобы избежать рекурсии
+        return handleSlotClick(slotId, clickedButton, mode, player);
+    }
+
+    private ItemStack handleSlotClick(int slotId, int clickedButton, int mode, EntityPlayer player) {
+        // Ваша логика обработки клика по слоту
+        // Например, перемещение предметов между слотами
+        // Добавьте вашу реализацию здесь
+
+        return super.slotClick(slotId, clickedButton, mode, player); // Возможно, вызовите super.slotClick() здесь
     }
 
     public InventorySpellBook getSpellBookInventory() {
