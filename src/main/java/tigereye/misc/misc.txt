@@ -1,0 +1,210 @@
+package tigereye.misc;
+
+import net.minecraft.client.gui.*;
+import net.minecraft.util.*;
+import net.minecraft.client.*;
+import net.minecraftforge.client.event.*;
+import net.minecraft.entity.player.*;
+import cpw.mods.fml.common.eventhandler.*;
+
+public class GuiManaBar extends Gui
+{
+    private final Minecraft mc;
+    
+    public GuiManaBar(final Minecraft mc) {
+        this.mc = mc;
+    }
+    
+    @SubscribeEvent(priority = EventPriority.NORMAL)
+    public void onRenderOverlay(final RenderGameOverlayEvent.Post event) {
+        // Используем событие TEXT, чтобы не конфликтовать с другими элементами интерфейса
+        if (event.isCancelable() || event.type != RenderGameOverlayEvent.ElementType.TEXT) {
+            return;
+        }
+
+        // Получаем свойства маны игрока
+        final ManaProperties props = ManaProperties.get((EntityPlayer)this.mc.thePlayer);
+        if (props == null || props.getMaxMana() == 0) {
+            return;
+        }
+
+        // Получаем текущее и максимальное значение маны
+        int currentMana = props.getCurrentMana();
+        int maxMana = props.getMaxMana();
+
+        // Получаем разрешение экрана
+        final int width = event.resolution.getScaledWidth();
+        final int height = event.resolution.getScaledHeight();
+
+        // Позиция текста (например, над полоской здоровья)
+        int x = width / 2 - 8; // Сдвиг вправо от центра
+        int y = height - 51; // Над полоской здоровья
+
+        // Отрисовываем текст с текущим и максимальным значением маны
+        String manaText = currentMana + "/" + maxMana;
+        this.mc.fontRenderer.drawStringWithShadow(manaText, x, y, 0x00FF00); // Зеленый цвет текста
+    }
+}package tigereye.misc;
+
+import cpw.mods.fml.common.*;
+import java.util.*;
+import net.minecraft.world.*;
+import net.minecraft.world.chunk.*;
+import tigereye.itemblock.*;
+import net.minecraft.init.*;
+import net.minecraft.block.*;
+import net.minecraft.world.gen.feature.*;
+
+public class ManaCrystalGen implements IWorldGenerator
+{
+    public void generate(final Random random, final int chunkX, final int chunkZ, final World world, final IChunkProvider chunkGenerator, final IChunkProvider chunkProvider) {
+        switch (world.provider.dimensionId) {
+            case -1: {
+                this.generateNether(world, random, chunkX * 16, chunkZ * 16);
+                break;
+            }
+            case 0: {
+                this.generateSurface(world, random, chunkX * 16, chunkZ * 16);
+                break;
+            }
+            case 1: {
+                this.generateEnd(world, random, chunkX * 16, chunkZ * 16);
+                break;
+            }
+        }
+    }
+    
+    private void generateNether(final World world, final Random random, final int x, final int z) {
+        this.generateOre(ModItemsBlocks.mana_crystal_ore, world, random, x, z, 16, 16, 3 + random.nextInt(6), 3, 1, 127, Blocks.netherrack);
+    }
+    
+    private void generateSurface(final World world, final Random random, final int x, final int z) {
+    }
+    
+    private void generateEnd(final World world, final Random random, final int x, final int z) {
+    }
+    
+    public void generateOre(final Block block, final World world, final Random random, final int blockXPos, final int blockZPos, final int maxX, final int maxZ, final int maxVeinSize, final int chancesToSpawn, final int minY, final int maxY, final Block target) {
+        for (int x = 0; x < chancesToSpawn; ++x) {
+            final int posX = blockXPos + random.nextInt(maxX);
+            final int posY = minY + random.nextInt(maxY - minY);
+            final int posZ = blockZPos + random.nextInt(maxZ);
+            new WorldGenMinable(block, maxVeinSize, target).generate(world, random, posX, posY, posZ);
+        }
+    }
+}
+package tigereye.misc;
+
+import net.minecraftforge.common.*;
+import net.minecraft.entity.player.*;
+import net.minecraft.util.*;
+import net.minecraft.nbt.*;
+import net.minecraft.entity.*;
+import net.minecraft.world.*;
+
+public class ManaProperties implements IExtendedEntityProperties
+{
+    public static final String NAME = "ManaProperties";
+    public static final int MANA_WATCHER = 20;
+    private EntityPlayer player;
+    private int maxMana;
+    public int manaTimer;
+    
+    public ManaProperties(final EntityPlayer player) {
+        this.player = player;
+        this.maxMana = 0;
+        this.manaTimer = 0;
+        this.player.getDataWatcher().addObject(20, (Object)this.maxMana);
+    }
+    
+    public boolean consumeMana(final int amount) {
+        int currentMana = this.player.getDataWatcher().getWatchableObjectInt(20);
+        if (currentMana >= amount) {
+            currentMana -= amount;
+            this.player.getDataWatcher().updateObject(20, (Object)currentMana);
+            return true;
+        }
+        return false;
+    }
+    
+    public void replenishMana(final int amount) {
+        int currentMana = this.player.getDataWatcher().getWatchableObjectInt(20);
+        currentMana = Math.min(currentMana + amount, this.maxMana);
+        this.player.getDataWatcher().updateObject(20, (Object)currentMana);
+    }
+    
+    public int getMaxMana() {
+        return this.maxMana;
+    }
+    
+    public void setMaxMana(final int maxMana) {
+        this.maxMana = MathHelper.clamp_int(maxMana, 0, 100);
+    }
+    
+    public int getCurrentMana() {
+        return this.player.getDataWatcher().getWatchableObjectInt(20);
+    }
+    
+    public static final void register(final EntityPlayer player) {
+        player.registerExtendedProperties("ManaProperties", (IExtendedEntityProperties)new ManaProperties(player));
+    }
+    
+    public static final ManaProperties get(final EntityPlayer player) {
+        return (ManaProperties)player.getExtendedProperties("ManaProperties");
+    }
+    
+    public void saveNBTData(final NBTTagCompound compound) {
+        final NBTTagCompound properties = new NBTTagCompound();
+        properties.setInteger("CurrentMana", this.player.getDataWatcher().getWatchableObjectInt(20));
+        properties.setInteger("MaxMana", this.maxMana);
+        properties.setInteger("ManaTimer", this.manaTimer);
+        compound.setTag("ManaProperties", (NBTBase)properties);
+    }
+    
+    public void loadNBTData(final NBTTagCompound compound) {
+        final NBTTagCompound properties = (NBTTagCompound)compound.getTag("ManaProperties");
+        this.player.getDataWatcher().updateObject(20, (Object)properties.getInteger("CurrentMana"));
+        this.maxMana = properties.getInteger("MaxMana");
+        this.manaTimer = properties.getInteger("ManaTimer");
+    }
+    
+    public void init(final Entity entity, final World world) {
+    }
+}
+package tigereye.misc;
+
+import io.netty.buffer.*;
+import cpw.mods.fml.common.network.*;
+import cpw.mods.fml.common.network.simpleimpl.*;
+import tigereye.*;
+import net.minecraft.entity.player.*;
+
+public class MaxManaMessage implements IMessage
+{
+    private int maxMana;
+    
+    public MaxManaMessage() {
+    }
+    
+    public MaxManaMessage(final int maxMana) {
+        this.maxMana = maxMana;
+    }
+    
+    public void fromBytes(final ByteBuf buf) {
+        this.maxMana = ByteBufUtils.readVarInt(buf, 1);
+    }
+    
+    public void toBytes(final ByteBuf buf) {
+        ByteBufUtils.writeVarInt(buf, this.maxMana, 1);
+    }
+    
+    public static class Handler implements IMessageHandler<MaxManaMessage, IMessage>
+    {
+        public IMessage onMessage(final MaxManaMessage message, final MessageContext ctx) {
+            final EntityPlayer player = ArcanaSpells.proxy.getPlayerFromMessageContext(ctx);
+            final ManaProperties prop = ManaProperties.get(player);
+            prop.setMaxMana(message.maxMana);
+            return null;
+        }
+    }
+}

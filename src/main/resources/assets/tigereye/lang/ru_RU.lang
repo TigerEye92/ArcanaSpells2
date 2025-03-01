@@ -1,0 +1,73 @@
+itemGroup.tabSpellBooks=Заклинания Aрканы
+
+item.spell_book.name=Книга заклинаний
+item.apple_mana.name=Кристаллическое яблоко
+item.mana_crystal.name=Кристалл маны
+
+tile.mana_crystal_ore.name=Источник кристаллов маны
+tile.mana_crystal_block.name=Блок кристаллов маны
+
+spell.blazefire=Пламя ифрита
+spell.ghastfire=Пламя гаста
+spell.witherblast=Иссушаюший бабах
+spell.lightning=Молния
+spell.summon.wolf=Призыв волка
+spell.summon.skeleton=Призыв скелета
+spell.summon.wither_skeleton=Призыв скелета иссушителя
+spell.summon.zombie=Призыв зомби
+spell.summon.zombie_pigman=Призыв свинозомби
+spell.summon.witch=Призыв ведьмы
+spell.summon.spider=Призыв паука
+spell.summon.cave_spider=Призыв пещерного паука
+spell.teleport=Телепорт
+spell.respawn=Возвращение
+spell.polymorph=Polymorph=Полиморф
+spell.shield.fire=Замедление падения
+spell.shield.earth=Удушение(ваш персонаж задохнется)
+spell.shield.water=Демонический покров
+spell.shield.storm=Глухота
+spell.shield.frost=Ускорение
+spell.blazestorm=Огнешторм
+spell.lightningstorm=Громовая встряска
+spell.summon.summon_eldritch_golem=Голем пустоты
+spell.summon.summon_eldrith_golem=Голем пустоты
+spell.summon.risen_ice_giant=Яростная сосулька
+spell.summon.summon_taintacle=Щупальца
+
+spell.level.1=I
+spell.level.2=II
+spell.level.3=III
+spell.level.4=IV
+spell.level.5=V
+spell.level.6=VI
+spell.level.7=VII
+spell.level.8=VIII
+spell.level.9=IX
+spell.level.10=X
+
+entity.summoned_wolf.name=Wolf=Волк
+entity.risen_skeleton.name=Skeleton=Скелет
+entity.risen_wither_skeleton.name=Wither Skeleton=Скелет иссушитель
+entity.risen_zombie.name=Zombie=Зомби
+entity.risen_zombie_pigman.name=Zombie Pigman=Свинозомби
+entity.summoned_witch.name=Witch=Ведьма
+entity.summoned_spider.name=Spider=Паук
+entity.summoned_cave_spider.name=Cave Spider=Пещерный паук
+entity.risen_ice_giant.name=Сосулька
+entity.summon_eldrith_golem.name=Голем из пустоты
+entity.summon_taintacle.name=Щупальца
+
+
+potion.polymorphed=Polymorphed=Полиморфное зелье
+potion.shield.fire=Fire Shield=Зелье: Огненный щит
+potion.shield.earth=Earth Shield=Зелье: Земляной щит
+potion.shield.water=Water Shield=Зелье: Водяной щит
+potion.shield.storm=Storm Shield=Зелье: Штормовой щит
+potion.shield.frost=Frost Shield=Зелье: Ледяной щит
+potion.feared=Feared=Зелье страха
+potion.immunity.projectile=Reflection=Зелье отражения
+potion.immunity.knockback=Steadfast=Зелье стойкости
+potion.mana.instant=Instant Mana=Мгновенное восстановление маны
+potion.mana.instant.postfix=Potion of Mana=Зелье маны
+potion.mana.regen=Mana Surge=Всплеск маны
+potion.mana.regen.postfix=Potion of Mana Surge=Всплеск маны

@@ -1,0 +1,309 @@
+package tigereye.eventhandler;
+
+import net.minecraftforge.event.entity.living.*;
+import net.minecraft.nbt.*;
+import cpw.mods.fml.common.eventhandler.*;
+import tigereye.*;
+import tigereye.misc.*;
+import net.minecraft.entity.player.*;
+import cpw.mods.fml.common.network.simpleimpl.*;
+import net.minecraftforge.event.entity.*;
+
+public class HandlerManaEvents
+{
+    @SubscribeEvent
+    public void onLivingDeathEvent(final LivingDeathEvent event) {
+        if (!event.entity.worldObj.isRemote && event.entity instanceof EntityPlayer) {
+            final NBTTagCompound playerData = new NBTTagCompound();
+            event.entity.getExtendedProperties("ManaProperties").saveNBTData(playerData);
+            CommonProxy.storeEntityData(((EntityPlayer)event.entity).getDisplayName() + "ManaProperties", playerData);
+        }
+    }
+    
+    @SubscribeEvent
+    public void onEntityJoinWorld(final EntityJoinWorldEvent event) {
+        if (!event.entity.worldObj.isRemote && event.entity instanceof EntityPlayer) {
+            final NBTTagCompound playerData = CommonProxy.getEntityData(((EntityPlayer)event.entity).getDisplayName() + "ManaProperties");
+            if (playerData != null) {
+                event.entity.getExtendedProperties("ManaProperties").loadNBTData(playerData);
+                ManaProperties.get((EntityPlayer)event.entity).replenishMana(0);
+            }
+            ArcanaSpells.networkWrapper.sendTo((IMessage)new MaxManaMessage(ManaProperties.get((EntityPlayer)event.entity).getMaxMana()), (EntityPlayerMP)event.entity);
+        }
+    }
+    
+    @SubscribeEvent
+    public void onEntityConstructing(final EntityEvent.EntityConstructing event) {
+        if (event.entity instanceof EntityPlayer && ManaProperties.get((EntityPlayer)event.entity) == null) {
+            ManaProperties.register((EntityPlayer)event.entity);
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import net.minecraftforge.event.*;
+import tigereye.itemblock.*;
+import cpw.mods.fml.common.eventhandler.*;
+
+public class HandlerOnAnvilUpdate
+{
+    @SubscribeEvent
+    public void OnAnvilUpdate(final AnvilUpdateEvent event) {
+        if (event.left.getItem().equals(ModItemsBlocks.spell_book) && event.right.getItem().equals(ModItemsBlocks.spell_book)) {
+            event.output = ((ItemSpellScroll)ModItemsBlocks.spell_book).tryCombine(event.left, event.right);
+            event.cost = 10;
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import net.minecraftforge.event.entity.living.*;
+import tigereye.potion.*;
+import net.minecraft.util.*;
+import net.minecraft.potion.*;
+import net.minecraft.entity.*;
+import cpw.mods.fml.common.eventhandler.*;
+
+public class HandlerOnLivingAttack
+{
+    @SubscribeEvent
+    public void onLivingAttack(final LivingAttackEvent event) {
+        if (event.entityLiving.worldObj.isRemote) {
+            return;
+        }
+        final Entity attacker = event.source.getEntity();
+        if (attacker != null) {
+            if (event.entityLiving.isPotionActive(ModPotions.projectileImmunity) && event.source.isProjectile()) {
+                event.setCanceled(true);
+            }
+            if (event.entityLiving.isPotionActive(ModPotions.knockbackImmunity)) {
+                event.entityLiving.getAttributeMap().getAttributeInstance(SharedMonsterAttributes.knockbackResistance).setBaseValue(1.0);
+            }
+            else {
+                event.entityLiving.getAttributeMap().getAttributeInstance(SharedMonsterAttributes.knockbackResistance).setBaseValue(0.0);
+            }
+            if (event.entityLiving.isPotionActive(ModPotions.fireShield) && attacker instanceof EntityLivingBase) {
+                final int amplifier = event.entityLiving.getActivePotionEffect(ModPotions.fireShield).getAmplifier() + 1;
+                attacker.setFire(4 * amplifier);
+                attacker.attackEntityFrom(DamageSource.onFire, (float)amplifier);
+            }
+            else if (event.entityLiving.isPotionActive(ModPotions.earthShield)) {
+                final int amplifier = event.entityLiving.getActivePotionEffect(ModPotions.earthShield).getAmplifier();
+                event.entityLiving.addPotionEffect(new PotionEffect(Potion.resistance.getId(), 80, amplifier));
+                event.entityLiving.addPotionEffect(new PotionEffect(ModPotions.knockbackImmunity.getId(), 80));
+            }
+            else if (event.entityLiving.isPotionActive(ModPotions.waterShield)) {
+                final int amplifier = event.entityLiving.getActivePotionEffect(ModPotions.waterShield).getAmplifier();
+                event.entityLiving.addPotionEffect(new PotionEffect(Potion.regeneration.getId(), 80, amplifier));
+                event.entityLiving.addPotionEffect(new PotionEffect(Potion.fireResistance.getId(), 160));
+            }
+            else if (event.entityLiving.isPotionActive(ModPotions.stormShield)) {
+                final int amplifier = event.entityLiving.getActivePotionEffect(ModPotions.stormShield).getAmplifier();
+                event.entityLiving.addPotionEffect(new PotionEffect(Potion.moveSpeed.getId(), 80, amplifier));
+                event.entityLiving.addPotionEffect(new PotionEffect(ModPotions.projectileImmunity.getId(), 80));
+            }
+            else if (event.entityLiving.isPotionActive(ModPotions.frostShield) && attacker instanceof EntityLivingBase) {
+                final int amplifier = event.entityLiving.getActivePotionEffect(ModPotions.frostShield).getAmplifier();
+                ((EntityLivingBase)attacker).addPotionEffect(new PotionEffect(Potion.moveSlowdown.getId(), 80, amplifier));
+                ((EntityLivingBase)attacker).addPotionEffect(new PotionEffect(Potion.weakness.getId(), 80, amplifier * 2));
+            }
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import net.minecraftforge.event.entity.living.*;
+import net.minecraft.entity.boss.*;
+import net.minecraft.entity.passive.*;
+import net.minecraft.entity.monster.*;
+import net.minecraft.entity.*;
+import cpw.mods.fml.common.eventhandler.*;
+import tigereye.spell.*;
+import tigereye.itemblock.*;
+import net.minecraft.entity.item.*;
+import net.minecraft.item.*;
+
+public class HandlerOnLivingDrops
+{
+    @SubscribeEvent
+    public void OnLivingDrops(final LivingDropsEvent event) {
+        final Class<? extends Entity> entityClass = event.entity.getClass();
+        if (entityClass.equals(EntityBlaze.class)) {
+            this.randomDrop(event, Spells.blazefire, (short)1, 10.0);
+            this.randomDrop(event, Spells.blazestorm, (short)1, 5.0);
+            this.randomDrop(event, Spells.fireShield, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntityGhast.class)) {
+            this.randomDrop(event, Spells.ghastfire, (short)1, 20.0);
+            this.randomDrop(event, Spells.fireShield, (short)1, 10.0);
+        }
+        else if (entityClass.equals(EntityWither.class)) {
+            this.randomDrop(event, Spells.witherblast, (short)1, 100.0);
+        }
+        else if (entityClass.equals(EntityCreeper.class)) {
+            this.randomDrop(event, Spells.lightningstorm, (short)1, 5.0);
+            this.randomDrop(event, Spells.stormShield, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntityZombie.class)) {
+            this.randomDrop(event, Spells.raise_zombie, (short)1, 5.0);
+            this.randomDrop(event, Spells.earthShield, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntityPigZombie.class)) {
+            this.randomDrop(event, Spells.raise_zombie_pigman, (short)1, 5.0);
+            this.randomDrop(event, Spells.earthShield, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntitySkeleton.class)) {
+            final int skeletonType = ((EntitySkeleton)event.entity).getSkeletonType();
+            if (skeletonType == 0) {
+                this.randomDrop(event, Spells.raise_skeleton, (short)1, 5.0);
+            }
+            else if (skeletonType == 1) {
+                this.randomDrop(event, Spells.raise_wither_skeleton, (short)1, 5.0);
+            }
+        }
+        else if (entityClass.equals(EntityWolf.class)) {
+            this.randomDrop(event, Spells.summon_wolf, (short)1, 5.0);
+            this.randomDrop(event, Spells.frostShield, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntityWitch.class)) {
+            this.randomDrop(event, Spells.summon_witch, (short)1, 15.0);
+        }
+        else if (entityClass.equals(EntitySpider.class)) {
+            this.randomDrop(event, Spells.summon_spider, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntityCaveSpider.class)) {
+            this.randomDrop(event, Spells.summon_cave_spider, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntityEnderman.class)) {
+            this.randomDrop(event, Spells.teleport, (short)1, 10.0);
+            this.randomDrop(event, Spells.respawn, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntitySquid.class)) {
+            this.randomDrop(event, Spells.waterShield, (short)1, 5.0);
+        }
+        else if (entityClass.equals(EntitySnowman.class)) {
+            this.randomDrop(event, Spells.frostShield, (short)1, 5.0);
+        }
+    }
+    
+    private void randomDrop(final LivingDropsEvent event, final Spell spell, final short level, final double percentage) {
+        final double randResult = event.entity.worldObj.rand.nextDouble() * 100.0;
+        if (randResult < percentage) {
+            final SpellData spellData = new SpellData(spell, level);
+            final ItemStack spellBookDrop = ((ItemSpellScroll)ModItemsBlocks.spell_book).getSpellItemStack(spellData);
+            event.drops.add(new EntityItem(event.entity.worldObj, event.entity.posX, event.entity.posY, event.entity.posZ, spellBookDrop));
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import net.minecraftforge.event.entity.living.*;
+import net.minecraft.entity.player.*;
+import tigereye.itemblock.*;
+import net.minecraft.item.*;
+import tigereye.spell.*;
+import cpw.mods.fml.common.eventhandler.*;
+
+public class HandlerOnLivingUpdate
+{
+    @SubscribeEvent
+    public void OnLivingUpdate(final LivingEvent.LivingUpdateEvent event) {
+        if (event.entity instanceof EntityPlayer) {
+            final EntityPlayer player = (EntityPlayer)event.entity;
+            final ItemStack heldItem = player.getHeldItem();
+            if (heldItem != null && heldItem.getItem() == ModItemsBlocks.spell_book && heldItem.stackTagCompound != null) {
+                final double particleChance = player.worldObj.rand.nextDouble();
+                final short id = heldItem.stackTagCompound.getShort("id");
+                final Spell spell = Spells.spellList[id];
+                if (particleChance < spell.getParticleAmount()) {
+                    final double d0 = player.worldObj.rand.nextGaussian() * 0.02;
+                    final double d2 = player.worldObj.rand.nextGaussian() * 0.02;
+                    final double d3 = player.worldObj.rand.nextGaussian() * 0.02;
+                    player.worldObj.spawnParticle(spell.getParticleName(), player.posX + player.worldObj.rand.nextFloat() * player.width * 2.0f - player.width, player.posY - 1.5 + player.worldObj.rand.nextFloat() * player.height, player.posZ + player.worldObj.rand.nextFloat() * player.width * 2.0f - player.width, d0, d2, d3);
+                }
+            }
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import cpw.mods.fml.common.gameevent.*;
+import cpw.mods.fml.relauncher.*;
+import tigereye.misc.*;
+import cpw.mods.fml.common.eventhandler.*;
+
+public class HandlerOnPlayerPostTick
+{
+    @SubscribeEvent
+    public void onPlayerPostTick(final TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.side != Side.SERVER || event.player.getFoodStats().getFoodLevel() < 18) {
+            return;
+        }
+        final ManaProperties prop = ManaProperties.get(event.player);
+        if (prop.getCurrentMana() >= prop.getMaxMana()) {
+            return;
+        }
+        final ManaProperties manaProperties2;
+        final ManaProperties manaProperties = manaProperties2 = prop;
+        ++manaProperties2.manaTimer;
+        if (prop.manaTimer >= 60) {
+            prop.replenishMana(1);
+            prop.manaTimer = 0;
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import net.minecraftforge.client.event.*;
+import net.minecraft.client.*;
+import tigereye.potion.*;
+import cpw.mods.fml.common.eventhandler.*;
+
+public class HandlerOnRenderHand
+{
+    @SubscribeEvent
+    public void OnRenderHand(final RenderHandEvent event) {
+        if (Minecraft.getMinecraft().thePlayer.isPotionActive(ModPotions.polymorphed)) {
+            event.setCanceled(true);
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import net.minecraft.client.renderer.entity.*;
+import tigereye.render.*;
+import net.minecraftforge.client.event.*;
+import tigereye.potion.*;
+import net.minecraft.entity.*;
+import cpw.mods.fml.common.eventhandler.*;
+
+public class HandlerOnRenderLiving
+{
+    private final Render renderPolyBat;
+    
+    public HandlerOnRenderLiving() {
+        this.renderPolyBat = (Render)new RenderPolyBat();
+    }
+    
+    @SubscribeEvent
+    public void onRenderLiving(final RenderLivingEvent.Pre event) {
+        if (event.entity.isPotionActive(ModPotions.polymorphed)) {
+            event.setCanceled(true);
+            this.renderPolyBat.doRender((Entity)event.entity, event.x, event.y, event.z, 0.0f, 0.0f);
+        }
+    }
+}
+package tigereye.eventhandler;
+
+import net.minecraftforge.common.*;
+import cpw.mods.fml.common.*;
+
+public class ModEventHandlers
+{
+    public static void registerModEventHandlers() {
+        MinecraftForge.EVENT_BUS.register((Object)new HandlerManaEvents());
+        MinecraftForge.EVENT_BUS.register((Object)new HandlerOnAnvilUpdate());
+        MinecraftForge.EVENT_BUS.register((Object)new HandlerOnLivingAttack());
+        FMLCommonHandler.instance().bus().register((Object)new HandlerOnPlayerPostTick());
+    }
+}

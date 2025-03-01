@@ -1,0 +1,801 @@
+package tigereye.itemblock;
+
+import net.minecraft.block.*;
+import net.minecraft.block.material.*;
+import net.minecraft.creativetab.*;
+
+public class BlockManaCrystal extends Block
+{
+    protected BlockManaCrystal() {
+        super(Material.iron);
+        this.setHardness(5.0f);
+        this.setResistance(10.0f);
+        this.setStepSound(BlockManaCrystal.soundTypePiston);
+        this.setBlockName("mana_crystal_block");
+        this.setBlockTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+        this.setLightLevel(0.625f);
+        this.setCreativeTab(CreativeTabs.tabBlock);
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.block.*;
+import java.util.*;
+import net.minecraft.block.material.*;
+import net.minecraft.creativetab.*;
+import net.minecraft.item.*;
+import net.minecraft.world.*;
+import net.minecraft.util.*;
+
+public class BlockManaCrystalOre extends Block
+{
+    private Random rand;
+    
+    protected BlockManaCrystalOre() {
+        super(Material.rock);
+        this.rand = new Random();
+        this.setHardness(3.0f);
+        this.setResistance(5.0f);
+        this.setStepSound(BlockManaCrystalOre.soundTypePiston);
+        this.setBlockName("mana_crystal_ore");
+        this.setBlockTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+        this.setLightLevel(0.625f);
+        this.setCreativeTab(CreativeTabs.tabBlock);
+    }
+    
+    public Item getItemDropped(final int p_149650_1_, final Random p_149650_2_, final int p_149650_3_) {
+        return ModItemsBlocks.mana_crystal;
+    }
+    
+    public int quantityDroppedWithBonus(final int p_149679_1_, final Random p_149679_2_) {
+        if (p_149679_1_ > 0 && Item.getItemFromBlock((Block)this) != ModItemsBlocks.mana_crystal) {
+            int j = p_149679_2_.nextInt(p_149679_1_ + 2) - 1;
+            if (j < 0) {
+                j = 0;
+            }
+            return j + 1;
+        }
+        return 1;
+    }
+    
+    public int getExpDrop(final IBlockAccess p_149690_1_, final int p_149690_5_, final int p_149690_7_) {
+        if (ModItemsBlocks.mana_crystal != Item.getItemFromBlock((Block)this)) {
+            return MathHelper.getRandomIntegerInRange(this.rand, 2, 5);
+        }
+        return 0;
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.item.*;
+import java.util.*;
+import cpw.mods.fml.relauncher.*;
+import net.minecraft.world.*;
+import tigereye.*;
+import tigereye.misc.*;
+import net.minecraft.entity.player.*;
+import cpw.mods.fml.common.network.simpleimpl.*;
+
+public class ItemAppleMana extends ItemFood
+{
+    public ItemAppleMana() {
+        super(4, 1.2f, false);
+        this.setAlwaysEdible();
+        this.setUnlocalizedName("apple_mana");
+        this.setTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+    }
+    
+    public EnumRarity getRarity(final ItemStack par1ItemStack) {
+        return EnumRarity.rare;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack par1ItemStack, final EntityPlayer par2EntityPlayer, final List par3List, final boolean par4) {
+        par3List.add("\u0414\u0430\u0451\u0442 \u043f\u0440\u0438\u0440\u043e\u0441\u0442 \u043c\u0430\u043d\u044b +2 \u0434\u043e 20 \u0435\u0434\u0438\u043d\u0438\u0446");
+    }
+    
+    protected void onFoodEaten(final ItemStack itemStack, final World world, final EntityPlayer entityPlayer) {
+        if (!world.isRemote) {
+            final ManaProperties props = ManaProperties.get(entityPlayer);
+            int maxMana = props.getMaxMana();
+            if (maxMana <= 18) {
+                maxMana += 2;
+                props.setMaxMana(maxMana);
+                ArcanaSpells.networkWrapper.sendTo((IMessage)new MaxManaMessage(maxMana), (EntityPlayerMP)entityPlayer);
+            }
+        }
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.item.*;
+import java.util.*;
+import cpw.mods.fml.relauncher.*;
+import net.minecraft.world.*;
+import tigereye.*;
+import tigereye.misc.*;
+import net.minecraft.entity.player.*;
+import cpw.mods.fml.common.network.simpleimpl.*;
+
+public class ItemAppleMana2 extends ItemFood
+{
+    public ItemAppleMana2() {
+        super(4, 1.2f, false);
+        this.setAlwaysEdible();
+        this.setUnlocalizedName("apple_mana2");
+        this.setTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+    }
+    
+    public EnumRarity getRarity(final ItemStack par1ItemStack) {
+        return EnumRarity.rare;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack par1ItemStack, final EntityPlayer par2EntityPlayer, final List par3List, final boolean par4) {
+        par3List.add("\u0414\u0430\u0451\u0442 \u043f\u0440\u0438\u0440\u043e\u0441\u0442 \u043c\u0430\u043d\u044b +2 \u043e\u0442 20 \u0434\u043e 40 \u0435\u0434\u0438\u043d\u0438\u0446");
+    }
+    
+    protected void onFoodEaten(final ItemStack itemStack, final World world, final EntityPlayer entityPlayer) {
+        if (!world.isRemote) {
+            final ManaProperties props = ManaProperties.get(entityPlayer);
+            int maxMana = props.getMaxMana();
+            if (maxMana <= 38) {
+                maxMana += 2;
+                props.setMaxMana(maxMana);
+                ArcanaSpells.networkWrapper.sendTo((IMessage)new MaxManaMessage(maxMana), (EntityPlayerMP)entityPlayer);
+            }
+        }
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.item.*;
+import java.util.*;
+import cpw.mods.fml.relauncher.*;
+import net.minecraft.world.*;
+import tigereye.*;
+import tigereye.misc.*;
+import net.minecraft.entity.player.*;
+import cpw.mods.fml.common.network.simpleimpl.*;
+
+public class ItemAppleMana3 extends ItemFood
+{
+    public ItemAppleMana3() {
+        super(4, 1.2f, false);
+        this.setAlwaysEdible();
+        this.setUnlocalizedName("apple_mana3");
+        this.setTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+    }
+    
+    public EnumRarity getRarity(final ItemStack par1ItemStack) {
+        return EnumRarity.rare;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack par1ItemStack, final EntityPlayer par2EntityPlayer, final List par3List, final boolean par4) {
+        par3List.add("\u0414\u0430\u0451\u0442 \u043f\u0440\u0438\u0440\u043e\u0441\u0442 \u043c\u0430\u043d\u044b +2 \u043e\u0442 40 \u0434\u043e 60 \u0435\u0434\u0438\u043d\u0438\u0446");
+    }
+    
+    protected void onFoodEaten(final ItemStack itemStack, final World world, final EntityPlayer entityPlayer) {
+        if (!world.isRemote) {
+            final ManaProperties props = ManaProperties.get(entityPlayer);
+            int maxMana = props.getMaxMana();
+            if (maxMana <= 58) {
+                maxMana += 2;
+                props.setMaxMana(maxMana);
+                ArcanaSpells.networkWrapper.sendTo((IMessage)new MaxManaMessage(maxMana), (EntityPlayerMP)entityPlayer);
+            }
+        }
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.item.*;
+import java.util.*;
+import cpw.mods.fml.relauncher.*;
+import net.minecraft.world.*;
+import tigereye.*;
+import tigereye.misc.*;
+import net.minecraft.entity.player.*;
+import cpw.mods.fml.common.network.simpleimpl.*;
+
+public class ItemAppleMana4 extends ItemFood
+{
+    public ItemAppleMana4() {
+        super(4, 1.2f, false);
+        this.setAlwaysEdible();
+        this.setUnlocalizedName("apple_mana4");
+        this.setTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+    }
+    
+    public EnumRarity getRarity(final ItemStack par1ItemStack) {
+        return EnumRarity.rare;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack par1ItemStack, final EntityPlayer par2EntityPlayer, final List par3List, final boolean par4) {
+        par3List.add("\u0414\u0430\u0451\u0442 \u043f\u0440\u0438\u0440\u043e\u0441\u0442 \u043c\u0430\u043d\u044b +2 \u043e\u0442 60 \u0434\u043e 80 \u0435\u0434\u0438\u043d\u0438\u0446");
+    }
+    
+    protected void onFoodEaten(final ItemStack itemStack, final World world, final EntityPlayer entityPlayer) {
+        if (!world.isRemote) {
+            final ManaProperties props = ManaProperties.get(entityPlayer);
+            int maxMana = props.getMaxMana();
+            if (maxMana <= 78) {
+                maxMana += 2;
+                props.setMaxMana(maxMana);
+                ArcanaSpells.networkWrapper.sendTo((IMessage)new MaxManaMessage(maxMana), (EntityPlayerMP)entityPlayer);
+            }
+        }
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.item.*;
+import java.util.*;
+import cpw.mods.fml.relauncher.*;
+import net.minecraft.world.*;
+import tigereye.*;
+import tigereye.misc.*;
+import net.minecraft.entity.player.*;
+import cpw.mods.fml.common.network.simpleimpl.*;
+
+public class ItemAppleMana5 extends ItemFood
+{
+    public ItemAppleMana5() {
+        super(4, 1.2f, false);
+        this.setAlwaysEdible();
+        this.setUnlocalizedName("apple_mana5");
+        this.setTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+    }
+    
+    public EnumRarity getRarity(final ItemStack par1ItemStack) {
+        return EnumRarity.rare;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack par1ItemStack, final EntityPlayer par2EntityPlayer, final List par3List, final boolean par4) {
+        par3List.add("\u0414\u0430\u0451\u0442 \u043f\u0440\u0438\u0440\u043e\u0441\u0442 \u043c\u0430\u043d\u044b +2 \u043e\u0442 80 \u0434\u043e 100 \u0435\u0434\u0438\u043d\u0438\u0446");
+    }
+    
+    protected void onFoodEaten(final ItemStack itemStack, final World world, final EntityPlayer entityPlayer) {
+        if (!world.isRemote) {
+            final ManaProperties props = ManaProperties.get(entityPlayer);
+            int maxMana = props.getMaxMana();
+            if (maxMana <= 98) {
+                maxMana += 2;
+                props.setMaxMana(maxMana);
+                ArcanaSpells.networkWrapper.sendTo((IMessage)new MaxManaMessage(maxMana), (EntityPlayerMP)entityPlayer);
+            }
+        }
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.util.*;
+import cpw.mods.fml.relauncher.*;
+import net.minecraft.creativetab.*;
+import net.minecraft.item.*;
+import java.util.*;
+import net.minecraft.potion.*;
+import tigereye.potion.*;
+import tigereye.brewingapi.*;
+import net.minecraft.client.renderer.texture.*;
+
+public class ItemPotionBase extends ItemPotion
+{
+    @SideOnly(Side.CLIENT)
+    private IIcon bottleDrinkable;
+    @SideOnly(Side.CLIENT)
+    private IIcon bottleSplash;
+    @SideOnly(Side.CLIENT)
+    private IIcon manaOverlayIcon;
+    @SideOnly(Side.CLIENT)
+    private IIcon manaRegenOverlayIcon;
+    
+    public ItemPotionBase() {
+        this.setUnlocalizedName("potion_base");
+        this.setTextureName("potion");
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void getSubItems(final Item par1Item, final CreativeTabs par2CreativeTab, final List par3List) {
+        par3List.add(getManaPotionStack(false, 0));
+        par3List.add(getManaPotionStack(false, 1));
+        par3List.add(getManaPotionStack(true, 0));
+        par3List.add(getManaPotionStack(true, 1));
+        par3List.add(getManaRegenPotionStack(false, 0, false));
+        par3List.add(getManaRegenPotionStack(false, 1, false));
+        par3List.add(getManaRegenPotionStack(false, 0, true));
+        par3List.add(getManaRegenPotionStack(true, 0, false));
+        par3List.add(getManaRegenPotionStack(true, 1, false));
+        par3List.add(getManaRegenPotionStack(true, 0, true));
+    }
+    
+    public static ItemStack getManaPotionStack(final boolean splash, final int amplification) {
+        final ItemStack itemStack = new ItemStack(ModItemsBlocks.itemPotionBase, 1, splash ? 16384 : 1);
+        final List<PotionEffect> effects = new ArrayList<PotionEffect>();
+        effects.add(new PotionEffect(ModPotions.mana.id, 1, amplification));
+        BrewingRecipes.brewing().setEffects(itemStack, (List)effects);
+        return itemStack;
+    }
+    
+    public static ItemStack getManaRegenPotionStack(final boolean splash, final int amplification, final boolean extended) {
+        final ItemStack itemStack = new ItemStack(ModItemsBlocks.itemPotionBase, 1, splash ? 16384 : 1);
+        final List<PotionEffect> effects = new ArrayList<PotionEffect>();
+        effects.add(new PotionEffect(ModPotions.manaRegen.id, (int)(900.0f * getDurationModifier(splash, amplification, extended)), amplification));
+        BrewingRecipes.brewing().setEffects(itemStack, (List)effects);
+        return itemStack;
+    }
+    
+    private static float getDurationModifier(final boolean splash, final int amplification, final boolean extended) {
+        float modifier = splash ? 0.75f : 1.0f;
+        for (int i = 0; i < amplification; ++i) {
+            modifier /= 2.0f;
+        }
+        return extended ? (modifier * 8.0f / 3.0f) : modifier;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconFromDamage(final int p_77617_1_) {
+        return isSplash(p_77617_1_) ? this.bottleSplash : this.bottleDrinkable;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public int getColorFromItemStack(final ItemStack par1ItemStack, final int par2) {
+        return 16777215;
+    }
+    
+    public IIcon getIcon(final ItemStack par1ItemStack, final int par2Pass) {
+        if (par2Pass == 0) {
+            final List<PotionEffect> effects = (List<PotionEffect>)this.getEffects(par1ItemStack);
+            if (effects.size() > 0) {
+                final int potionId = effects.get(0).getPotionID();
+                if (potionId == ModPotions.mana.id) {
+                    return this.manaOverlayIcon;
+                }
+                if (potionId == ModPotions.manaRegen.id) {
+                    return this.manaRegenOverlayIcon;
+                }
+            }
+        }
+        return super.getIcon(par1ItemStack, par2Pass);
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(final IIconRegister par1IconRegister) {
+        this.bottleDrinkable = par1IconRegister.registerIcon("tigereye:bottle_drinkable");
+        this.bottleSplash = par1IconRegister.registerIcon("tigereye:bottle_splash");
+        this.manaOverlayIcon = par1IconRegister.registerIcon("tigereye:mana_potion_overlay");
+        this.manaRegenOverlayIcon = par1IconRegister.registerIcon("tigereye:mana_regen_potion_overlay");
+    }
+}
+package tigereye.itemblock;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
+import tigereye.spell.SpellData;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import java.util.List;
+import java.util.ArrayList;
+
+import tigereye.ArcanaSpells;
+import tigereye.gui.GuiHandler;
+import tigereye.gui.InventorySpellBook;
+
+public class ItemSpellBook extends Item {
+
+    public ItemSpellBook() {
+        this.setMaxStackSize(1);
+        this.setUnlocalizedName("spell_book2");
+        this.setTextureName("tigereye:spell_book2");
+        this.setCreativeTab(ModItemsBlocks.tabSpellBooks);
+    }
+
+    // Добавление заклинания в книгу
+    public void addSpell(ItemStack book, SpellData spell) {
+        if (book.stackTagCompound == null) {
+            book.stackTagCompound = new NBTTagCompound();
+        }
+        NBTTagList spellList = book.stackTagCompound.getTagList("Spells", 10);
+        if (spellList == null) {
+            spellList = new NBTTagList();
+        }
+        NBTTagCompound spellTag = SpellData.writeToNBTTagCompound(spell);
+        spellList.appendTag(spellTag);
+        book.stackTagCompound.setTag("Spells", spellList);
+    }
+
+    // Получение списка заклинаний из книги
+    public List<SpellData> getSpells(ItemStack book) {
+        List<SpellData> spells = new ArrayList<>();
+        if (book.stackTagCompound != null && book.stackTagCompound.hasKey("Spells")) {
+            NBTTagList spellList = book.stackTagCompound.getTagList("Spells", 10);
+            for (int i = 0; i < spellList.tagCount(); i++) {
+                NBTTagCompound spellTag = spellList.getCompoundTagAt(i);
+                spells.add(SpellData.readFromNBTTagCompound(spellTag));
+            }
+        }
+        return spells;
+    }
+
+    // Сохранение инвентаря заклинаний в книгу
+    public void saveInventoryToBook(ItemStack book, InventorySpellBook inventory) {
+        if (book.stackTagCompound == null) {
+            book.stackTagCompound = new NBTTagCompound();
+        }
+        NBTTagList spellList = new NBTTagList();
+        for (int i = 0; i < inventory.getSizeInventory(); i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (stack != null && stack.getItem() instanceof ItemSpellScroll) {
+                SpellData spellData = ItemSpellScroll.getSpellData(stack);
+                if (spellData != null) {
+                    NBTTagCompound spellTag = SpellData.writeToNBTTagCompound(spellData);
+                    spellList.appendTag(spellTag);
+                }
+            }
+        }
+        book.stackTagCompound.setTag("Spells", spellList);
+    }
+
+    // Загрузка инвентаря заклинаний из книги
+    public void loadInventoryFromBook(ItemStack book, InventorySpellBook inventory) {
+        if (book.stackTagCompound != null && book.stackTagCompound.hasKey("Spells")) {
+            NBTTagList spellList = book.stackTagCompound.getTagList("Spells", 10);
+            for (int i = 0; i < spellList.tagCount(); i++) {
+                NBTTagCompound spellTag = spellList.getCompoundTagAt(i);
+                SpellData spellData = SpellData.readFromNBTTagCompound(spellTag);
+                if (spellData != null) {
+                    ItemStack spellStack = new ItemStack(ModItemsBlocks.spell_scroll); // Используем ItemSpellScroll
+                    spellStack.stackTagCompound = new NBTTagCompound();
+                    spellStack.stackTagCompound.setTag("spell", spellTag);
+                    inventory.setInventorySlotContents(i, spellStack);
+                }
+            }
+        }
+    }
+
+    // Получение активного слота из книги
+    public int getActiveSlot(ItemStack book) {
+        if (book.stackTagCompound != null && book.stackTagCompound.hasKey("ActiveSlot")) {
+            return book.stackTagCompound.getInteger("ActiveSlot");
+        }
+        return 0; // Возвращаем 0, если активный слот не задан
+    }
+
+    // Установка активного слота в книге
+    public void setActiveSlot(ItemStack book, int slot) {
+        if (book.stackTagCompound == null) {
+            book.stackTagCompound = new NBTTagCompound();
+        }
+        book.stackTagCompound.setInteger("ActiveSlot", slot);
+    }
+
+    public static SpellData getSpellData(ItemStack stack) {
+        if (stack.stackTagCompound != null && stack.stackTagCompound.hasKey("spell")) {
+            return SpellData.readFromNBTTagCompound(stack.stackTagCompound.getCompoundTag("spell"));
+        }
+        return null;
+    }
+    
+    // Использование книги (открытие GUI)
+    @Override
+    public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
+        if (!world.isRemote) {
+            // Открыть GUI книги заклинаний
+            player.openGui(ArcanaSpells.instance, GuiHandler.SPELL_BOOK_GUI, world, (int) player.posX, (int) player.posY, (int) player.posZ);
+        }
+        return stack;
+    }
+}package tigereye.itemblock;
+
+import cpw.mods.fml.relauncher.*;
+import net.minecraft.entity.player.*;
+import java.util.*;
+import tigereye.spell.targeted.*;
+import tigereye.spell.summon.*;
+import tigereye.spell.shield.*;
+import tigereye.spell.aoe.*;
+import net.minecraft.nbt.*;
+import net.minecraft.item.*;
+import net.minecraft.world.*;
+import tigereye.misc.*;
+import net.minecraft.entity.*;
+import net.minecraft.creativetab.*;
+import tigereye.spell.*;
+import net.minecraft.util.*;
+import net.minecraft.client.renderer.texture.*;
+
+public class ItemSpellScroll extends Item
+{
+    @SideOnly(Side.CLIENT)
+    protected IIcon[] icons;
+    
+    public ItemSpellScroll() {
+        this.setMaxStackSize(1);
+        this.setMaxDamage(0);
+        this.setUnlocalizedName("spell_book");
+        this.setTextureName("tigereye:" + this.getUnlocalizedName().substring(5));
+        this.setCreativeTab(ModItemsBlocks.tabSpellBooks);
+    }
+    
+    public NBTTagCompound getSpellTag(final ItemStack par1ItemStack) {
+        if (par1ItemStack.stackTagCompound != null && par1ItemStack.stackTagCompound.hasKey("spell")) {
+            return (NBTTagCompound)par1ItemStack.stackTagCompound.getTag("spell");
+        }
+        return null;
+    }
+
+    // Добавляем метод getSpellData
+    public static SpellData getSpellData(ItemStack stack) {
+        if (stack.stackTagCompound != null && stack.stackTagCompound.hasKey("spell")) {
+            return SpellData.readFromNBTTagCompound(stack.stackTagCompound.getCompoundTag("spell"));
+        }
+        return null;
+    }
+
+//    // Метод для получения активного слота
+//    public int getActiveSlot(ItemStack stack) {
+//        if (stack.stackTagCompound != null && stack.stackTagCompound.hasKey("activeSlot")) {
+//            return stack.stackTagCompound.getInteger("activeSlot");
+//        }
+//        return 0; // По умолчанию активный слот — 0
+//    }
+//
+//    // Метод для установки активного слота
+//    public void setActiveSlot(ItemStack stack, int slot) {
+//        if (stack.stackTagCompound == null) {
+//            stack.stackTagCompound = new NBTTagCompound();
+//        }
+//        stack.stackTagCompound.setInteger("activeSlot", slot);
+//    }
+    
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack par1ItemStack, final EntityPlayer par2EntityPlayer, final List par3List, final boolean par4) {
+        final SpellData spellData = SpellData.readFromNBTTagCompound(this.getSpellTag(par1ItemStack));
+        if (spellData.spellObj != null) {
+            if (spellData.spellObj instanceof ISpellTargeted) {
+                par3List.add("Targeted");
+            }
+            else if (spellData.spellObj instanceof SpellSummon) {
+                par3List.add("Summoning");
+            }
+            else if (spellData.spellObj instanceof SpellShield) {
+                par3List.add("Enhancement");
+            }
+            else if (spellData.spellObj instanceof SpellAoE) {
+                par3List.add("Area of effect");
+            }
+            else {
+                par3List.add("Miscellaneous");
+            }
+            if (spellData.spellCooldown != 0) {
+                par3List.add(EnumChatFormatting.RED + "Cooldown: " + spellData.spellCooldown / 20 + " seconds");
+            }
+        }
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public String getItemStackDisplayName(final ItemStack par1ItemStack) {
+        final SpellData spellData = SpellData.readFromNBTTagCompound(this.getSpellTag(par1ItemStack));
+        if (spellData.spellObj != null) {
+            return spellData.spellObj.getTranslatedName(spellData.spellLevel);
+        }
+        return super.getItemStackDisplayName(par1ItemStack);
+    }
+    
+    public ItemStack tryCombine(final ItemStack par1ItemStack, final ItemStack par2ItemStack) {
+        if (par1ItemStack.getItem() == ModItemsBlocks.spell_book && par2ItemStack.getItem() == ModItemsBlocks.spell_book && par1ItemStack.stackTagCompound != null && par2ItemStack.stackTagCompound != null && par1ItemStack.stackTagCompound.hasKey("spell") && par2ItemStack.stackTagCompound.hasKey("spell")) {
+            final NBTTagCompound spellTag1 = par1ItemStack.stackTagCompound.getCompoundTag("spell");
+            final NBTTagCompound spellTag2 = par2ItemStack.stackTagCompound.getCompoundTag("spell");
+            final SpellData spellData1 = SpellData.readFromNBTTagCompound(spellTag1);
+            final SpellData spellData2 = SpellData.readFromNBTTagCompound(spellTag2);
+            final SpellData spellData3 = SpellData.tryCombine(spellData1, spellData2);
+            if (spellData3 != null) {
+                return this.getSpellItemStack(spellData3);
+            }
+        }
+        return null;
+    }
+    
+    public ItemStack getSpellItemStack(final SpellData par1SpellData) {
+        final ItemStack itemstack = new ItemStack((Item)this);
+        itemstack.stackTagCompound = new NBTTagCompound();
+        final NBTTagCompound spellTag = SpellData.writeToNBTTagCompound(par1SpellData);
+        itemstack.stackTagCompound.setTag("spell", (NBTBase)spellTag);
+        itemstack.setItemDamage(par1SpellData.spellObj.effectId);
+        return itemstack;
+    }
+    
+    public EnumRarity getRarity(final ItemStack par1ItemStack) {
+        return EnumRarity.rare;
+    }
+    
+    public ItemStack onItemRightClick(final ItemStack par1ItemStack, final World par2World, final EntityPlayer par3EntityPlayer) {
+        if (!par2World.isRemote) {
+            final NBTTagCompound spellTag = this.getSpellTag(par1ItemStack);
+            final SpellData spellData = SpellData.readFromNBTTagCompound(spellTag);
+            final boolean inCreative = par3EntityPlayer.capabilities.isCreativeMode;
+            if (!inCreative && spellData.spellCooldown > 0) {
+                return par1ItemStack;
+            }
+            final ManaProperties props = ManaProperties.get(par3EntityPlayer);
+            if (inCreative || props.consumeMana(spellData.spellObj.getManaCost())) {
+                spellData.castSpell(par2World, par3EntityPlayer);
+                SpellData.startCooldown(spellTag);
+            }
+        }
+        return par1ItemStack;
+    }
+    
+    public void onUpdate(final ItemStack par1ItemStack, final World par2World, final Entity par3Entity, final int par4, final boolean par5) {
+        if (!par2World.isRemote) {
+            SpellData.tickCooldown(this.getSpellTag(par1ItemStack));
+        }
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void getSubItems(final Item par1Item, final CreativeTabs par2CreativeTab, final List par3List) {
+        for (int i1 = 0; i1 < Spells.spellList.length; ++i1) {
+            final Spell spell = Spells.spellList[i1];
+            if (spell != null) {
+                for (short i2 = spell.getMinLevel(); i2 <= spell.getMaxLevel(); ++i2) {
+                    par3List.add(((ItemSpellScroll)ModItemsBlocks.spell_book).getSpellItemStack(new SpellData(spell, i2)));
+                }
+            }
+        }
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconFromDamage(final int par1) {
+        final int j = MathHelper.clamp_int(par1, 0, this.icons.length - 1);
+        if (this.icons[j] != null) {
+            return this.icons[j];
+        }
+        return super.getIconFromDamage(par1);
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(final IIconRegister par1IconRegister) {
+        super.registerIcons(par1IconRegister);
+        this.icons = new IIcon[256];
+        final IIcon blazefireIcon = par1IconRegister.registerIcon("tigereye:blazefire_book");
+        final IIcon teleportIcon = par1IconRegister.registerIcon("tigereye:teleport_book");
+        final IIcon witherIcon = par1IconRegister.registerIcon("tigereye:wither_book");
+        final IIcon skeletonIcon = par1IconRegister.registerIcon("tigereye:skeleton_book");
+        this.icons[Spells.blazefire.effectId] = blazefireIcon;
+        this.icons[Spells.ghastfire.effectId] = par1IconRegister.registerIcon("tigereye:ghast_book");
+        this.icons[Spells.witherblast.effectId] = witherIcon;
+        this.icons[Spells.summon_wolf.effectId] = par1IconRegister.registerIcon("tigereye:wolf_book");
+        this.icons[Spells.raise_skeleton.effectId] = skeletonIcon;
+        this.icons[Spells.raise_wither_skeleton.effectId] = witherIcon;
+        this.icons[Spells.risen_ice_giant.effectId] = par1IconRegister.registerIcon("tigereye:giant_book");
+        this.icons[Spells.summon_eldrith_golem.effectId] = par1IconRegister.registerIcon("tigereye:eldgolem_book");
+        this.icons[Spells.summon_taintacle.effectId] = par1IconRegister.registerIcon("tigereye:taintacle_book");
+        this.icons[Spells.raise_zombie.effectId] = par1IconRegister.registerIcon("tigereye:zombie_book");
+        this.icons[Spells.raise_zombie_pigman.effectId] = par1IconRegister.registerIcon("tigereye:zombie_pigman_book");
+        this.icons[Spells.summon_witch.effectId] = par1IconRegister.registerIcon("tigereye:witch_book");
+        this.icons[Spells.summon_spider.effectId] = par1IconRegister.registerIcon("tigereye:spider_book");
+        this.icons[Spells.summon_cave_spider.effectId] = par1IconRegister.registerIcon("tigereye:cave_spider_book");
+        this.icons[Spells.teleport.effectId] = teleportIcon;
+        this.icons[Spells.respawn.effectId] = teleportIcon;
+        this.icons[Spells.fireShield.effectId] = par1IconRegister.registerIcon("tigereye:fire_shield_book");
+        this.icons[Spells.earthShield.effectId] = par1IconRegister.registerIcon("tigereye:earth_shield_book");
+        this.icons[Spells.waterShield.effectId] = par1IconRegister.registerIcon("tigereye:water_shield_book");
+        this.icons[Spells.stormShield.effectId] = par1IconRegister.registerIcon("tigereye:storm_shield_book");
+        this.icons[Spells.frostShield.effectId] = par1IconRegister.registerIcon("tigereye:frost_shield_book");
+        this.icons[Spells.blazestorm.effectId] = blazefireIcon;
+        this.icons[Spells.lightningstorm.effectId] = par1IconRegister.registerIcon("tigereye:lightning_book");
+        this.icons[Spells.healSelf.effectId] = par1IconRegister.registerIcon("tigereye:lightning_book");
+        this.icons[Spells.restoreHunger.effectId] = par1IconRegister.registerIcon("tigereye:lightning_book");
+        this.icons[Spells.invisibility.effectId] = par1IconRegister.registerIcon("tigereye:lightning_book");
+    }
+}package tigereye.itemblock;
+
+import net.minecraft.creativetab.*;
+import net.minecraft.block.*;
+import net.minecraft.item.*;
+import net.minecraft.init.*;
+import cpw.mods.fml.common.registry.*;
+import tigereye.brewingapi.*;
+
+import cpw.mods.fml.relauncher.*;
+
+public class ModItemsBlocks
+{
+    public static final CreativeTabs tabSpellBooks;
+    public static final Item spell_scroll;
+    public static final Item spell_book;
+    public static final Item apple_mana;
+    public static final Item apple_mana2;
+    public static final Item apple_mana3;
+    public static final Item apple_mana4;
+    public static final Item apple_mana5;
+    public static final Item mana_crystal;
+    public static final Item itemPotionBase;
+    public static final Block mana_crystal_ore;
+    public static final Block mana_crystal_block;
+    
+
+    
+    
+    public static void registerModItemsAndBlocks() {
+        registerItem(ModItemsBlocks.spell_scroll);
+        registerItem(ModItemsBlocks.apple_mana);
+        registerItem(ModItemsBlocks.spell_book);
+
+        registerItem(ModItemsBlocks.apple_mana2);
+        registerItem(ModItemsBlocks.apple_mana3);
+        registerItem(ModItemsBlocks.apple_mana4);
+        registerItem(ModItemsBlocks.apple_mana5);
+        registerItem(ModItemsBlocks.mana_crystal);
+        registerItem(ModItemsBlocks.itemPotionBase);
+        registerBlock(ModItemsBlocks.mana_crystal_ore);
+        registerBlock(ModItemsBlocks.mana_crystal_block);
+        GameRegistry.addRecipe(new ItemStack(ModItemsBlocks.apple_mana), new Object[] { "xxx", "xyx", "xxx", 'x', ModItemsBlocks.mana_crystal, 'y', Items.apple });
+        GameRegistry.addRecipe(new ItemStack(ModItemsBlocks.mana_crystal_block), new Object[] { "xxx", "xxx", "xxx", 'x', ModItemsBlocks.mana_crystal });
+        GameRegistry.addRecipe(new ItemStack(ModItemsBlocks.mana_crystal, 9), new Object[] { "x", 'x', ModItemsBlocks.mana_crystal_block });
+        final ItemStack awkward = new ItemStack((Item)Items.potionitem, 1, 16);
+        final ItemStack gunpowder = new ItemStack(Items.gunpowder);
+        final ItemStack glowstone = new ItemStack(Items.glowstone_dust);
+        final ItemStack redstone = new ItemStack(Items.redstone);
+        final ItemStack mana = ItemPotionBase.getManaPotionStack(false, 0);
+        final ItemStack manaAmpl = ItemPotionBase.getManaPotionStack(false, 1);
+        final ItemStack manaSplash = ItemPotionBase.getManaPotionStack(true, 0);
+        final ItemStack manaSplashAmpl = ItemPotionBase.getManaPotionStack(true, 1);
+        final ItemStack regen = ItemPotionBase.getManaRegenPotionStack(false, 0, false);
+        final ItemStack regenAmpl = ItemPotionBase.getManaRegenPotionStack(false, 1, false);
+        final ItemStack regenExt = ItemPotionBase.getManaRegenPotionStack(false, 0, true);
+        final ItemStack regenSplash = ItemPotionBase.getManaRegenPotionStack(true, 0, false);
+        final ItemStack regenSplashAmpl = ItemPotionBase.getManaRegenPotionStack(true, 1, false);
+        final ItemStack regenSplashExt = ItemPotionBase.getManaRegenPotionStack(true, 0, true);
+        BrewingRecipes.brewing().addBrewing(awkward, new ItemStack(ModItemsBlocks.mana_crystal), mana);
+        BrewingRecipes.brewing().addBrewing(mana, glowstone, manaAmpl);
+        BrewingRecipes.brewing().addBrewing(mana, gunpowder, manaSplash);
+        BrewingRecipes.brewing().addBrewing(manaAmpl, gunpowder, manaSplashAmpl);
+        BrewingRecipes.brewing().addBrewing(manaSplash, glowstone, manaSplashAmpl);
+        BrewingRecipes.brewing().addBrewing(awkward, new ItemStack(ModItemsBlocks.apple_mana), regen);
+        BrewingRecipes.brewing().addBrewing(regen, glowstone, regenAmpl);
+        BrewingRecipes.brewing().addBrewing(regenExt, glowstone, regenAmpl);
+        BrewingRecipes.brewing().addBrewing(regen, redstone, regenExt);
+        BrewingRecipes.brewing().addBrewing(regenAmpl, redstone, regenExt);
+        BrewingRecipes.brewing().addBrewing(regen, gunpowder, regenSplash);
+        BrewingRecipes.brewing().addBrewing(regenAmpl, gunpowder, regenSplashAmpl);
+        BrewingRecipes.brewing().addBrewing(regenSplash, glowstone, regenSplashAmpl);
+        BrewingRecipes.brewing().addBrewing(regenSplashExt, glowstone, regenSplashAmpl);
+        BrewingRecipes.brewing().addBrewing(regenExt, gunpowder, regenSplashExt);
+        BrewingRecipes.brewing().addBrewing(regenSplash, redstone, regenSplashExt);
+        BrewingRecipes.brewing().addBrewing(regenSplashAmpl, redstone, regenSplashExt);
+    }
+    
+    private static void registerBlock(final Block block) {
+        GameRegistry.registerBlock(block, "tigereye_" + block.getUnlocalizedName().substring(5));
+    }
+    
+    private static void registerItem(final Item item) {
+        GameRegistry.registerItem(item, "tigereye_" + item.getUnlocalizedName().substring(5));
+    }
+    
+    static {
+        tabSpellBooks = new CreativeTabs("tabSpellBooks") {
+            @SideOnly(Side.CLIENT)
+            public Item getTabIconItem() {
+                return ModItemsBlocks.spell_scroll;
+            }
+        };
+        spell_scroll = new ItemSpellScroll();
+        spell_book = new ItemSpellBook();
+        apple_mana = (Item)new ItemAppleMana();
+        apple_mana2 = (Item)new ItemAppleMana2();
+        apple_mana3 = (Item)new ItemAppleMana3();
+        apple_mana4 = (Item)new ItemAppleMana4();
+        apple_mana5 = (Item)new ItemAppleMana5();
+        mana_crystal = new Item().setUnlocalizedName("mana_crystal").setCreativeTab(CreativeTabs.tabMaterials).setTextureName("tigereye:mana_crystal");
+        itemPotionBase = (Item)new ItemPotionBase();
+        mana_crystal_ore = new BlockManaCrystalOre();
+        mana_crystal_block = new BlockManaCrystal();
+    }
+}

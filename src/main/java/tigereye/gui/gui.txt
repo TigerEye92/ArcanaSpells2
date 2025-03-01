@@ -1,0 +1,281 @@
+package tigereye.gui;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.Slot;
+import net.minecraft.item.ItemStack;
+import tigereye.itemblock.ItemSpellScroll;
+
+public class ContainerSpellBook extends Container {
+
+    private final InventorySpellBook spellBookInventory;
+    private final ItemStack bookStack;
+
+    public ContainerSpellBook(InventoryPlayer inventoryPlayer, ItemStack bookStack) {
+        this.spellBookInventory = new InventorySpellBook();
+        this.bookStack = bookStack;
+
+        // Слоты для активных заклинаний (используем SlotSpellBook)
+        for (int i = 0; i < 8; ++i) {
+            this.addSlotToContainer(new SlotSpellBook(this.spellBookInventory, i, 18, 5 + i * 18));
+        }
+
+        // Слоты для инвентаря игрока
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 9; ++j) {
+                this.addSlotToContainer(new Slot(inventoryPlayer, j + i * 9 + 9, 48 + j * 18, 171 + i * 18));
+            }
+        }
+
+        // Слоты для горячей панели игрока
+        for (int i = 0; i < 9; ++i) {
+            this.addSlotToContainer(new Slot(inventoryPlayer, i, 48 + i * 18, 229));
+        }
+    }
+
+    @Override
+    public boolean canInteractWith(EntityPlayer player) {
+        return true;
+    }
+
+    public InventorySpellBook getSpellBookInventory() {
+        return spellBookInventory;
+    }
+}package tigereye.gui;
+
+import cpw.mods.fml.common.network.IGuiHandler;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.world.World;
+
+public class GuiHandler implements IGuiHandler {
+
+    public static final int SPELL_BOOK_GUI = 0;
+
+    @Override
+    public Object getServerGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
+        if (ID == SPELL_BOOK_GUI) {
+            return new ContainerSpellBook(player.inventory, player.getHeldItem());
+        }
+        return null;
+    }
+
+    @Override
+    public Object getClientGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
+        if (ID == SPELL_BOOK_GUI) {
+            return new GuiSpellBook(player.inventory, player.getHeldItem());
+        }
+        return null;
+    }
+}
+package tigereye.gui;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
+import org.lwjgl.opengl.GL11;
+import tigereye.itemblock.ItemSpellScroll;
+import tigereye.spell.SpellData;
+
+public class GuiInGame extends Gui {
+
+    private static final ResourceLocation SPELL_ICONS = new ResourceLocation("tigereye", "textures/gui/spell_icons.png");
+    private final Minecraft mc;
+
+    public GuiInGame(Minecraft mc) {
+        this.mc = mc;
+    }
+
+    public void renderGameOverlay() {
+        // Получаем текущий предмет в руке игрока
+        ItemStack heldItem = mc.thePlayer.getHeldItem();
+        if (heldItem != null && heldItem.getItem() instanceof ItemSpellScroll) {
+            // Получаем данные о заклинании
+            SpellData spellData = ItemSpellScroll.getSpellData(heldItem);
+            if (spellData != null) {
+                // Отрисовываем иконку заклинания
+                renderSpellIcon(spellData, 10, 10);
+            }
+        }
+    }
+
+    private void renderSpellIcon(SpellData spellData, int x, int y) {
+        // Привязываем текстуру иконок заклинаний
+        mc.getTextureManager().bindTexture(SPELL_ICONS);
+
+        // Включаем прозрачность
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+        // Отрисовываем иконку заклинания
+        Tessellator tessellator = Tessellator.instance;
+        tessellator.startDrawingQuads();
+        tessellator.addVertexWithUV(x, y + 16, 0, 0, 1);
+        tessellator.addVertexWithUV(x + 16, y + 16, 0, 1, 1);
+        tessellator.addVertexWithUV(x + 16, y, 0, 1, 0);
+        tessellator.addVertexWithUV(x, y, 0, 0, 0);
+        tessellator.draw();
+
+        // Отключаем прозрачность
+        GL11.glDisable(GL11.GL_BLEND);
+    }
+}
+package tigereye.gui;
+
+import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
+import org.lwjgl.opengl.GL11;
+import tigereye.itemblock.ItemSpellBook;
+import tigereye.spell.SpellData;
+import tigereye.spell.SpellHelper;
+
+public class GuiSpellBook extends GuiContainer {
+
+    private static final ResourceLocation background = new ResourceLocation("tigereye", "textures/gui/spellbook_gui.png");
+    private static final ResourceLocation extras = new ResourceLocation("tigereye", "textures/gui/spellbook_gui_extras.png");
+
+    private int bookActiveSlot; // Активный слот в книге заклинаний
+
+    public GuiSpellBook(InventoryPlayer inventoryPlayer, ItemStack spellBookStack) {
+        super(new ContainerSpellBook(inventoryPlayer, spellBookStack));
+        this.xSize = 256; // Ширина GUI
+        this.ySize = 250; // Высота GUI
+
+        // Проверяем, что предмет в руке — это книга заклинаний
+        if (spellBookStack.getItem() instanceof ItemSpellBook) {
+            this.bookActiveSlot = ((ItemSpellBook) spellBookStack.getItem()).getActiveSlot(spellBookStack);
+        } else {
+            this.bookActiveSlot = 0; // По умолчанию активный слот — 0
+        }
+    }
+
+    @Override
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        // Отрисовка фона
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(background);
+        int x = (this.width - this.xSize) / 2;
+        int y = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(x, y, 0, 0, this.xSize, this.ySize);
+
+        // Отрисовка дополнительных элементов (например, выделение активного слота)
+        this.mc.getTextureManager().bindTexture(extras);
+        int slotX = x + 16; // Позиция X активного слота
+        int slotY = y + 3 + bookActiveSlot * 18; // Позиция Y активного слота
+        this.drawTexturedModalRect(slotX, slotY, 0, 0, 20, 20); // Отрисовка выделения
+    }
+
+    @Override
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        // Отрисовка названий заклинаний
+        for (int i = 0; i < 8; ++i) {
+            ItemStack stack = ((ContainerSpellBook) this.inventorySlots).getSpellBookInventory().getStackInSlot(i);
+            if (stack != null) {
+                SpellData spellData = SpellHelper.getSpellData(stack); // Используем универсальный метод
+                if (spellData != null) {
+                    String spellName = spellData.spellObj.getTranslatedName(spellData.spellLevel);
+                    this.fontRendererObj.drawString(spellName, 37, 5 + i * 18, 0x404040);
+                }
+            }
+        }
+    }
+}  package tigereye.gui;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import tigereye.itemblock.ItemSpellScroll;
+
+public class InventorySpellBook implements IInventory {
+
+    private final ItemStack[] inventory = new ItemStack[8];
+
+    @Override
+    public int getSizeInventory() {
+        return inventory.length;
+    }
+
+    @Override
+    public ItemStack getStackInSlot(int slot) {
+        return inventory[slot];
+    }
+
+    @Override
+    public ItemStack decrStackSize(int slot, int amount) {
+        if (inventory[slot] != null) {
+            ItemStack stack = inventory[slot].splitStack(amount);
+            if (inventory[slot].stackSize == 0) {
+                inventory[slot] = null;
+            }
+            return stack;
+        }
+        return null;
+    }
+
+    @Override
+    public ItemStack getStackInSlotOnClosing(int slot) {
+        return inventory[slot];
+    }
+
+    @Override
+    public void setInventorySlotContents(int slot, ItemStack stack) {
+        inventory[slot] = stack;
+    }
+
+    @Override
+    public String getInventoryName() {
+        return "Spell Book";
+    }
+
+    @Override
+    public boolean hasCustomInventoryName() {
+        return false;
+    }
+
+    @Override
+    public int getInventoryStackLimit() {
+        return 1;
+    }
+
+    @Override
+    public void markDirty() {}
+
+    @Override
+    public boolean isUseableByPlayer(EntityPlayer player) {
+        return true;
+    }
+
+    @Override
+    public void openInventory() {}
+
+    @Override
+    public void closeInventory() {}
+
+    @Override
+    public boolean isItemValidForSlot(int slot, ItemStack stack) {
+        return stack.getItem() instanceof ItemSpellScroll;
+    }
+}
+package tigereye.gui;
+
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.Slot;
+import net.minecraft.item.ItemStack;
+import tigereye.itemblock.ItemSpellScroll;
+
+public class SlotSpellBook extends Slot {
+
+    public SlotSpellBook(IInventory inventory, int slotIndex, int x, int y) {
+        super(inventory, slotIndex, x, y);
+    }
+
+    @Override
+    public boolean isItemValid(ItemStack stack) {
+        // Проверяем, что в слот можно поместить только свитки с заклинаниями
+        return stack.getItem() instanceof ItemSpellScroll;
+    }
+}

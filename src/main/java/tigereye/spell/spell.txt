@@ -1,0 +1,321 @@
+package tigereye.spell;
+
+import java.util.*;
+import net.minecraft.util.*;
+import net.minecraft.world.*;
+import net.minecraft.entity.player.*;
+
+public abstract class Spell
+{
+    protected static final Random random;
+    public final int effectId;
+    private String name;
+    
+    protected Spell(final int par1) {
+        Spells.registerSpell(this, this.effectId = par1);
+    }
+    
+    public short getMinLevel() {
+        return 1;
+    }
+    
+    public short getMaxLevel() {
+        return 1;
+    }
+    
+    public int getManaCost() {
+        return 1;
+    }
+    
+    public short getCooldown() {
+        return 20;
+    }
+    
+    public String getSoundName() {
+        return "mob.ghast.fireball";
+    }
+    
+    public String getParticleName() {
+        return "happyVillager";
+    }
+    
+    public double getParticleAmount() {
+        return 1.0;
+    }
+    
+    protected Spell setName(final String par1Str) {
+        this.name = par1Str;
+        return this;
+    }
+    
+    private String getName() {
+        return "spell." + this.name;
+    }
+    
+    public String getTranslatedName(final int par1) {
+        final String s = StatCollector.translateToLocal(this.getName());
+        return s + " " + StatCollector.translateToLocal("spell.level." + par1);
+    }
+    
+    protected int getNormalizedLevel(final short par1Level) {
+        return Math.max(this.getMinLevel(), Math.min(par1Level, this.getMaxLevel()));
+    }
+    
+    public abstract void castSpell(final short p0, final World p1, final EntityPlayer p2);
+    
+    static {
+        random = new Random();
+    }
+}
+package tigereye.spell;
+
+import net.minecraft.world.*;
+import net.minecraft.entity.player.*;
+import net.minecraft.nbt.*;
+
+public class SpellData
+{
+    public final Spell spellObj;
+    public final short spellLevel;
+    public final short spellCooldown;
+    
+    public SpellData(final Spell par1Spell, final short par2Level, final short par3Cooldown) {
+        this.spellObj = par1Spell;
+        this.spellLevel = par2Level;
+        this.spellCooldown = par3Cooldown;
+    }
+    
+    public SpellData(final Spell par1Spell, final short par2Level) {
+        this(par1Spell, par2Level, (short)0);
+    }
+    
+    public void castSpell(final World par1World, final EntityPlayer par2EntityPlayer) {
+        this.spellObj.castSpell(this.spellLevel, par1World, par2EntityPlayer);
+    }
+    
+    public static NBTTagCompound writeToNBTTagCompound(final SpellData par1SpellData) {
+        final NBTTagCompound tag = new NBTTagCompound();
+        tag.setShort("id", (short)par1SpellData.spellObj.effectId);
+        tag.setShort("lvl", par1SpellData.spellLevel);
+        tag.setShort("cd", par1SpellData.spellCooldown);
+        return tag;
+    }
+    
+    public static SpellData readFromNBTTagCompound(final NBTTagCompound par1NBTTagCompound) {
+        final Spell spell = Spells.spellList[par1NBTTagCompound.getShort("id")];
+        final short tagLevel = par1NBTTagCompound.getShort("lvl");
+        final short tagCooldown = par1NBTTagCompound.getShort("cd");
+        return new SpellData(spell, tagLevel, tagCooldown);
+    }
+    
+    public static void tickCooldown(final NBTTagCompound par1NBTTagCompound) {
+        final short cooldown = par1NBTTagCompound.getShort("cd");
+        if (cooldown > 0) {
+            par1NBTTagCompound.setShort("cd", (short)(cooldown - 1));
+        }
+    }
+    
+    public static void startCooldown(final NBTTagCompound par1NBTTagCompound) {
+        final Spell spell = Spells.spellList[par1NBTTagCompound.getShort("id")];
+        par1NBTTagCompound.setShort("cd", spell.getCooldown());
+    }
+    
+    public static SpellData tryCombine(final SpellData par1SpellData, final SpellData par2SpellData) {
+        if (par1SpellData.spellObj.effectId == par2SpellData.spellObj.effectId) {
+            if (par1SpellData.spellLevel > par2SpellData.spellLevel) {
+                return par1SpellData;
+            }
+            if (par1SpellData.spellLevel == par2SpellData.spellLevel) {
+                short newSpellLevel = par1SpellData.spellLevel;
+                if (par1SpellData.spellLevel + 1 <= par1SpellData.spellObj.getMaxLevel()) {
+                    ++newSpellLevel;
+                }
+                return new SpellData(par1SpellData.spellObj, newSpellLevel);
+            }
+        }
+        return null;
+    }
+}
+package tigereye.spell;
+
+import net.minecraft.item.ItemStack;
+import tigereye.itemblock.ItemSpellBook;
+import tigereye.itemblock.ItemSpellScroll;
+
+public class SpellHelper {
+    public static SpellData getSpellData(ItemStack stack) {
+        if (stack.getItem() instanceof ItemSpellScroll) {
+            return ItemSpellScroll.getSpellData(stack);
+        } else if (stack.getItem() instanceof ItemSpellBook) {
+            return ItemSpellBook.getSpellData(stack);
+        }
+        return null;
+    }
+}package tigereye.spell;
+
+import net.minecraft.world.*;
+import net.minecraft.entity.player.*;
+import net.minecraft.entity.*;
+import tigereye.potion.*;
+import net.minecraft.potion.*;
+
+public class SpellPolymorph extends Spell
+{
+    protected SpellPolymorph(final int par1) {
+        super(par1);
+        this.setName("polymorph");
+    }
+    
+    @Override
+    public int getManaCost() {
+        return 6;
+    }
+    
+    @Override
+    public short getCooldown() {
+        return 200;
+    }
+    
+    @Override
+    public void castSpell(final short par1Level, final World par2World, final EntityPlayer par3EntityPlayer) {
+        par2World.playSoundAtEntity((Entity)par3EntityPlayer, this.getSoundName(), 1.0f, 1.0f);
+        par3EntityPlayer.addPotionEffect(new PotionEffect(ModPotions.polymorphed.getId(), 200, 0));
+    }
+}
+package tigereye.spell;
+
+import net.minecraft.world.*;
+import net.minecraft.entity.player.*;
+import net.minecraft.entity.*;
+import net.minecraft.util.*;
+
+public class SpellRespawn extends Spell
+{
+    protected SpellRespawn(final int par1) {
+        super(par1);
+        this.setName("respawn");
+    }
+    
+    @Override
+    public int getManaCost() {
+        return 12;
+    }
+    
+    @Override
+    public short getCooldown() {
+        return 6000;
+    }
+    
+    @Override
+    public String getParticleName() {
+        return "portal";
+    }
+    
+    @Override
+    public double getParticleAmount() {
+        return 1.0;
+    }
+    
+    @Override
+    public String getSoundName() {
+        return "mob.ghast.fireball";
+    }
+    
+    @Override
+    public void castSpell(final short par1Level, final World par2World, final EntityPlayer par3EntityPlayer) {
+        par2World.playSoundAtEntity((Entity)par3EntityPlayer, this.getSoundName(), 1.0f, 1.0f);
+        ChunkCoordinates coordSpawn = par3EntityPlayer.getBedLocation(0);
+        if (coordSpawn != null) {
+            par3EntityPlayer.setPositionAndUpdate((double)coordSpawn.posX, (double)(coordSpawn.posY + 1), (double)coordSpawn.posZ);
+        }
+        else {
+            coordSpawn = par2World.getSpawnPoint();
+            par3EntityPlayer.setPositionAndUpdate((double)coordSpawn.posX, (double)coordSpawn.posY, (double)coordSpawn.posZ);
+        }
+        par2World.playSoundAtEntity((Entity)par3EntityPlayer, this.getSoundName(), 1.0f, 1.0f);
+    }
+}
+package tigereye.spell;
+
+import tigereye.spell.targeted.*;
+import tigereye.spell.shield.*;
+import tigereye.spell.aoe.*;
+import tigereye.spell.self.SpellHealSelf;
+import tigereye.spell.self.SpellInvisibility;
+import tigereye.spell.self.SpellRestoreHunger;
+import tigereye.spell.summon.*;
+import tigereye.entity.*;
+
+public class Spells
+{
+    public static final Spell[] spellList;
+    public static final Spell blazefire;
+    public static final Spell ghastfire;
+    public static final Spell witherblast;
+    public static final Spell summon_wolf;
+    public static final Spell raise_skeleton;
+    public static final Spell raise_wither_skeleton;
+    public static final Spell raise_zombie;
+    public static final Spell raise_zombie_pigman;
+    public static final Spell summon_witch;
+    public static final Spell summon_spider;
+    public static final Spell summon_cave_spider;
+    public static final Spell teleport;
+    public static final Spell respawn;
+    public static final Spell fireShield;
+    public static final Spell earthShield;
+    public static final Spell waterShield;
+    public static final Spell stormShield;
+    public static final Spell frostShield;
+    public static final Spell blazestorm;
+    public static final Spell lightningstorm;
+    public static final Spell summon_wolf2;
+    public static final Spell risen_ice_giant;
+    public static final Spell summon_eldrith_golem;
+    public static final Spell summon_taintacle;
+    public static final Spell healSelf;
+    public static final Spell restoreHunger;
+    public static final Spell invisibility;
+
+    
+    
+    public static void registerSpell(final Spell par1Spell, final int par2effectId) {
+        if (Spells.spellList[par2effectId] != null) {
+            throw new IllegalArgumentException("Duplicate spell id!");
+        }
+        Spells.spellList[par2effectId] = par1Spell;
+    }
+    
+    static {
+        spellList = new Spell[256];
+        blazefire = new SpellBlazeFire(1);
+        ghastfire = new SpellGhastFire(2);
+        witherblast = new SpellWitherBlast(3);
+        summon_wolf = new SpellSummon(4, "wolf", EntitySummonedWolf.class);
+        raise_skeleton = new SpellSummon(5, "skeleton", EntityRisenSkeleton.class);
+        raise_wither_skeleton = new SpellSummon(6, "wither_skeleton", EntityRisenWitherSkeleton.class);
+        raise_zombie = new SpellSummon(7, "zombie", EntityRisenZombie.class);
+        raise_zombie_pigman = new SpellSummon(8, "zombie_pigman", EntityRisenZombiePigman.class);
+        summon_witch = new SpellSummon(9, "witch", EntitySummonedWitch.class);
+        summon_spider = new SpellSummon(10, "spider", EntitySummonedSpider.class);
+        summon_cave_spider = new SpellSummon(11, "cave_spider", EntitySummonedCaveSpider.class);
+        teleport = new SpellTeleport(12);
+        respawn = new SpellRespawn(13);
+        fireShield = new SpellFireShield(14);
+        earthShield = new SpellEarthShield(15);
+        waterShield = new SpellWaterShield(16);
+        stormShield = new SpellStormShield(17);
+        frostShield = new SpellFrostShield(18);
+        blazestorm = new SpellBlazeStorm(19);
+        lightningstorm = new SpellLightningStorm(20);
+        summon_wolf2 = new SpellSummon2(21, "wolf", EntitySummonedWolf.class);
+        risen_ice_giant = new SpellSummon2(22, "risen_ice_giant", EntityRisenIceGiant.class);
+        summon_eldrith_golem = new SpellSummon2(23, "summon_eldrith_golem", EntitySummonEldritchGolem.class);
+        summon_taintacle = new SpellSummon2(24, "summon_taintacle", EntitySummonTaintacle.class);
+        healSelf = new SpellHealSelf(25);
+        restoreHunger = new SpellRestoreHunger(26);
+        invisibility = new SpellInvisibility(27);
+
+        
+    }
+}
